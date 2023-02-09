@@ -15,7 +15,7 @@ INNER JOIN vandy
 USING(playerid)
 LEFT JOIN earnings
 USING(playerid)
-ORDER BY big_league_pay DESC
+ORDER BY big_league_pay DESC;
 --DAVID Price earned the most money.  Why is there no pay information about Scrappy Moore?  Slim Embry? 
 
 --2. Using the fielding table, group players into three groups based on their position: label players with position OF as "Outfield", those with position "SS", "1B", "2B", and "3B" as "Infield", and those with position "P" or "C" as "Battery". Determine the number of putouts made by each of these three groups in 2016.
@@ -23,8 +23,7 @@ SELECT
 	CASE WHEN pos = 'OF' THEN 'Outfield' 
 		WHEN pos IN('SS', '1B', '2B', '3B') THEN 'Infield' 
 		WHEN pos IN ('P', 'C') THEN 'Battery' END AS position, 
-	SUM(po) as put_outs
-	
+	SUM(po) as put_outs	
 FROM fielding
 WHERE yearid = '2016'
 GROUP BY position
@@ -32,6 +31,26 @@ ORDER BY put_outs DESC;
 -- Infield - 58,934; Battery - 41,424; Outfield - 29,560 
 
 --3. Find the average number of strikeouts per game by decade since 1920. Round the numbers you report to 2 decimal places. Do the same for home runs per game. Do you see any trends? (Hint: For this question, you might find it helpful to look at the **generate_series** function (https://www.postgresql.org/docs/9.1/functions-srf.html). If you want to see an example of this in action, check out this DataCamp video: https://campus.datacamp.com/courses/exploratory-data-analysis-in-sql/summarizing-and-aggregating-numeric-data?ex=6)
+WITH decades AS(
+	SELECT generate_series(1920, 2016, 10) AS per_decennium),
+	strikeouts AS(
+		SELECT yearid, ROUND(AVG(so), 2) AS average_strike_outs
+		FROM pitching
+		WHERE yearid >= 1920
+		GROUP BY yearid
+		ORDER BY yearid DESC),
+	home_runs AS(
+		SELECT yearid, ROUND(AVG(hr), 2) AS average_home_runs 
+		FROM batting
+		WHERE yearid >= 1920
+		GROUP BY yearid
+		ORDER BY yearid DESC)		
+SELECT yearid, average_strike_outs, average_home_runs
+FROM strikeouts
+	LEFT JOIN home_runs
+	ON yearid
+GROUP BY yearid
+ORDER BY yearid DESC;
 
 --4. Find the player who had the most success stealing bases in 2016, where __success__ is measured as the percentage of stolen base attempts which are successful. (A stolen base attempt results either in a stolen base or being caught stealing.) Consider only players who attempted _at least_ 20 stolen bases. Report the players' names, number of stolen bases, number of attempts, and stolen base percentage.
 
