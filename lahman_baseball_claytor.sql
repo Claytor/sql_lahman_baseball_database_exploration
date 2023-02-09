@@ -1,25 +1,27 @@
 --1. Find all players in the database who played at Vanderbilt University. Create a list showing each player's first and last names as well as the total salary they earned in the major leagues. Sort this list in descending order by the total salary earned. Which Vanderbilt player earned the most money in the majors?
 
-SELECT playerid, namelast, namefirst
-FROM people
-
---semi-working--pickup here
-SELECT playerid, p.namelast, p.namefirst 
-FROM collegeplaying AS c
-LEFT JOIN people as p
+WITH earnings AS(
+	SELECT playerid,
+		SUM(salary) as big_league_pay 
+	FROM salaries
+	GROUP BY playerid),
+vandy AS(
+	SELECT DISTINCT(playerid)
+	FROM collegeplaying
+	WHERE schoolid = 'vandy')
+SELECT playerid, p.namelast, p.namefirst, big_league_pay 
+FROM people as p
+INNER JOIN vandy
 USING(playerid)
-WHERE c.schoolid = 'vandy'
-
---
-SELECT *
-FROM schools
-
---I'm looking for the lgid "NL"
-SELECT DISTINCT lgid
-FROM salaries
-
+LEFT JOIN earnings
+USING(playerid)
+ORDER BY big_league_pay DESC
+--DAVID Price earned the most money.  Why is there no pay information about Scrappy Moore?  Slim Embry? 
 
 --2. Using the fielding table, group players into three groups based on their position: label players with position OF as "Outfield", those with position "SS", "1B", "2B", and "3B" as "Infield", and those with position "P" or "C" as "Battery". Determine the number of putouts made by each of these three groups in 2016.
+SELECT pos
+FROM fielding
+WHERE yearid = '2016'
 
 --3. Find the average number of strikeouts per game by decade since 1920. Round the numbers you report to 2 decimal places. Do the same for home runs per game. Do you see any trends? (Hint: For this question, you might find it helpful to look at the **generate_series** function (https://www.postgresql.org/docs/9.1/functions-srf.html). If you want to see an example of this in action, check out this DataCamp video: https://campus.datacamp.com/courses/exploratory-data-analysis-in-sql/summarizing-and-aggregating-numeric-data?ex=6)
 
