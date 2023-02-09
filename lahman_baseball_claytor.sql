@@ -19,9 +19,17 @@ ORDER BY big_league_pay DESC
 --DAVID Price earned the most money.  Why is there no pay information about Scrappy Moore?  Slim Embry? 
 
 --2. Using the fielding table, group players into three groups based on their position: label players with position OF as "Outfield", those with position "SS", "1B", "2B", and "3B" as "Infield", and those with position "P" or "C" as "Battery". Determine the number of putouts made by each of these three groups in 2016.
-SELECT pos
+SELECT 
+	CASE WHEN pos = 'OF' THEN 'Outfield' 
+		WHEN pos IN('SS', '1B', '2B', '3B') THEN 'Infield' 
+		WHEN pos IN ('P', 'C') THEN 'Battery' END AS position, 
+	SUM(po) as put_outs
+	
 FROM fielding
 WHERE yearid = '2016'
+GROUP BY position
+ORDER BY put_outs DESC;
+-- Infield - 58,934; Battery - 41,424; Outfield - 29,560 
 
 --3. Find the average number of strikeouts per game by decade since 1920. Round the numbers you report to 2 decimal places. Do the same for home runs per game. Do you see any trends? (Hint: For this question, you might find it helpful to look at the **generate_series** function (https://www.postgresql.org/docs/9.1/functions-srf.html). If you want to see an example of this in action, check out this DataCamp video: https://campus.datacamp.com/courses/exploratory-data-analysis-in-sql/summarizing-and-aggregating-numeric-data?ex=6)
 
