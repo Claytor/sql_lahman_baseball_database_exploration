@@ -2,7 +2,7 @@
 
 WITH earnings AS(
 	SELECT playerid,
-		SUM(salary) as big_league_pay 
+		SUM(salary)::numeric::money AS big_league_pay 
 	FROM salaries
 	GROUP BY playerid),
 vandy AS(
@@ -31,10 +31,10 @@ ORDER BY put_outs DESC;
 -- Infield - 58,934; Battery - 41,424; Outfield - 29,560 
 
 --3. Find the average number of strikeouts per game by decade since 1920. Round the numbers you report to 2 decimal places. Do the same for home runs per game. Do you see any trends? (Hint: For this question, you might find it helpful to look at the **generate_series** function (https://www.postgresql.org/docs/9.1/functions-srf.html). If you want to see an example of this in action, check out this DataCamp video: https://campus.datacamp.com/courses/exploratory-data-analysis-in-sql/summarizing-and-aggregating-numeric-data?ex=6)
-WITH decades AS(
+/*WITH decades AS(
 	SELECT generate_series(1920, 2016, 10) AS per_decennium),
 	strikeouts AS(
-		SELECT yearid, ROUND(AVG(so), 2) AS average_strike_outs
+		SELECT yearid, ROUND(sum(so)/sum(g, 2) AS average_strike_outs	
 		FROM pitching
 		WHERE yearid >= 1920
 		GROUP BY yearid
@@ -47,10 +47,20 @@ WITH decades AS(
 		ORDER BY yearid DESC)		
 SELECT yearid, average_strike_outs, average_home_runs
 FROM strikeouts
-	LEFT JOIN home_runs
-	ON yearid
+	FULL JOIN home_runs
+	--USING (yearid)
+	
 GROUP BY yearid
-ORDER BY yearid DESC;
+ORDER BY yearid DESC; */
+
+WITH generate_series AS (SELECT * FROM
+generate_series(1920,2010,10 ))
+SELECT generate_series, SUM(g) 
+FROM pitching
+INNER JOIN generate_series
+ON generate_series+1 <= yearid AND generate_series+10 >= yearid
+GROUP BY generate_series
+ORDER BY generate_series DESC
 
 --4. Find the player who had the most success stealing bases in 2016, where __success__ is measured as the percentage of stolen base attempts which are successful. (A stolen base attempt results either in a stolen base or being caught stealing.) Consider only players who attempted _at least_ 20 stolen bases. Report the players' names, number of stolen bases, number of attempts, and stolen base percentage.
 
