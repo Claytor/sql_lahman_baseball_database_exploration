@@ -31,40 +31,53 @@ ORDER BY put_outs DESC;
 -- Infield - 58,934; Battery - 41,424; Outfield - 29,560 
 
 --3. Find the average number of strikeouts per game by decade since 1920. Round the numbers you report to 2 decimal places. Do the same for home runs per game. Do you see any trends? (Hint: For this question, you might find it helpful to look at the **generate_series** function (https://www.postgresql.org/docs/9.1/functions-srf.html). If you want to see an example of this in action, check out this DataCamp video: https://campus.datacamp.com/courses/exploratory-data-analysis-in-sql/summarizing-and-aggregating-numeric-data?ex=6)
-/*WITH decades AS(
-	SELECT generate_series(1920, 2016, 10) AS per_decennium),
-	strikeouts AS(
-		SELECT yearid, ROUND(sum(so)/sum(g, 2) AS average_strike_outs	
-		FROM pitching
-		WHERE yearid >= 1920
-		GROUP BY yearid
-		ORDER BY yearid DESC),
-	home_runs AS(
-		SELECT yearid, ROUND(AVG(hr), 2) AS average_home_runs 
-		FROM batting
-		WHERE yearid >= 1920
-		GROUP BY yearid
-		ORDER BY yearid DESC)		
-SELECT yearid, average_strike_outs, average_home_runs
-FROM strikeouts
-	FULL JOIN home_runs
-	--USING (yearid)
-	
-GROUP BY yearid
-ORDER BY yearid DESC; */
 
-WITH generate_series AS (SELECT * FROM
-generate_series(1920,2010,10 ))
-SELECT generate_series, SUM(g) 
-FROM pitching
-INNER JOIN generate_series
-ON generate_series+1 <= yearid AND generate_series+10 >= yearid
-GROUP BY generate_series
-ORDER BY generate_series DESC
+WITH decade AS (SELECT 
+generate_series (1920, 2016, 10) AS decade)
+	SELECT decade::text || 's' AS decade,
+	COALESCE(ROUND (SUM(so)*1.0/SUM(g), 2), 0) as Avg_Strikeouts,
+	COALESCE(ROUND (SUM(hr)*1.0/SUM(g), 2), 0) as Avg_Homeruns
+	FROM pitching
+	INNER JOIN decade
+		ON decade+1 <= yearid 
+		AND decade+10 >= yearid
+		WHERE yearid >= 1920
+		GROUP BY decade
+	ORDER BY decade ASC;
+-- Trends in both had been increasing from the 20s to the 1960s.  Strikeouts started declining after that point and homeruns remained around 3%
 
 --4. Find the player who had the most success stealing bases in 2016, where __success__ is measured as the percentage of stolen base attempts which are successful. (A stolen base attempt results either in a stolen base or being caught stealing.) Consider only players who attempted _at least_ 20 stolen bases. Report the players' names, number of stolen bases, number of attempts, and stolen base percentage.
 
---5. From 1970 to 2016, what is the largest number of wins for a team that did not win the world series? What is the smallest number of wins for a team that did win the world series? Doing this will probably result in an unusually small number of wins for a world series champion; determine why this is the case. Then redo your query, excluding the problem year. How often from 1970 to 2016 was it the case that a team with the most wins also won the world series? What percentage of the time?
+SELECT namelast,
+	namegiven,
+	sb AS stolen,
+	cs AS caught,
+	b.sb + b.cs AS attempts,
+	ROUND(b.sb *100.0/(b.sb + b.cs), 2)AS success
+FROM batting as b
+INNER JOIN people AS p
+ON b.playerid = p.playerid
+WHERE b.sb + b.cs >= 20 AND yearid = 2016
+ORDER BY success DESC;
+-- Chris Owens was the most successful stealer.
+
+--5a. From 1970 to 2016, what is the largest number of wins for a team that did not win the world series? 
+SELECT name, SUM(w) as wins
+FROM teams
+WHERE wswin = 'N' AND yearid BETWEEN 1970 AND 2016
+GROUP BY name
+ORDER BY wins DESC;
+-- The Los Angeles Dodgers had the largest number of wins while not winning the world series during this time.
+
+--5b. What is the smallest number of wins for a team that did win the world series? Doing this will probably result in an unusually small number of wins for a world series champion; determine why this is the case. 
+SELECT name, SUM(w) as wins
+FROM teams
+WHERE wswin = 'Y' AND yearid BETWEEN 1970 AND 2016
+GROUP BY name
+ORDER BY wins;
+--5c. Then redo your query, excluding the problem year. 
+--5d. How often from 1970 to 2016 was it the case that a team with the most wins also won the world series? 
+--5e. What percentage of the time?
 
 --6. Which managers have won the TSN Manager of the Year award in both the National League (NL) and the American League (AL)? Give their full name and the teams that they were managing when they won the award.
 
