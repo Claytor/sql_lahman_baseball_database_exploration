@@ -74,12 +74,49 @@ SELECT name, SUM(w) as wins
 FROM teams
 WHERE wswin = 'Y' AND yearid BETWEEN 1970 AND 2016
 GROUP BY name
-ORDER BY wins;
+ORDER BY wins DESC;
+--
+
 --5c. Then redo your query, excluding the problem year. 
---5d. How often from 1970 to 2016 was it the case that a team with the most wins also won the world series? 
+SELECT name, SUM(w) as wins
+FROM teams
+WHERE yearid BETWEEN 1970 AND 2016 AND yearid !=1981
+GROUP BY name
+ORDER BY wins;
+
+--5d. How often from 1970 to 2016 was it the case that a team with the most wins also won the world series?
+WITH wins AS(
+	SELECT DISTINCT(yearid), name, MAX(w) OVER(PARTITION BY yearid) AS team_wins 
+	FROM teams
+	WHERE yearid between 1970 AND 2016
+	GROUP BY yearid, teams.w
+	ORDER BY yearid DESC),
+	team_wins AS(
+	SELECT yearid, name, WSwin AS worldseries
+	FROM teams
+	WHERE yearid between 1970 AND 2016
+	GROUP BY yearid, name, worldseries)
+SELECT yearid, name, season_wins, worldseries
+FROM wins
+LEFT JOIN team_wins
+USING (yearid)
+ORDER BY yearid
+
+	
+	
+	
+	
+SELECT yearid, name, WSwin AS worldseries, MAX(w) AS wins
+FROM teams
+WHERE yearid BETWEEN 1970 AND 2016 AND yearid !=1981
+GROUP BY yearid, name, WSwin
+
 --5e. What percentage of the time?
 
 --6. Which managers have won the TSN Manager of the Year award in both the National League (NL) and the American League (AL)? Give their full name and the teams that they were managing when they won the award.
+SELECT *
+FROM awardsmanagers 
+
 
 --7. Which pitcher was the least efficient in 2016 in terms of salary / strikeouts? Only consider pitchers who started at least 10 games (across all teams). Note that pitchers often play for more than one team in a season, so be sure that you are counting all stats for each player.
 
